@@ -12,9 +12,6 @@ BOT_NAME = "scrapyProjet"
 SPIDER_MODULES = ["scrapyProjet.spiders"]
 NEWSPIDER_MODULE = "scrapyProjet.spiders"
 
-# FEEDS = {
-#     'futurelearn.json': {'format': 'json'}
-# }
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = "scrapyProjet (+http://www.yourdomain.com)"
@@ -66,7 +63,7 @@ ROBOTSTXT_OBEY = False
 # Configure item pipelines
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    "scrapyProjet.pipelines.ScrapyprojetPipeline": 300,
+     'scrapyProjet.pipelines.PostgreSQLPipeline': 100,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

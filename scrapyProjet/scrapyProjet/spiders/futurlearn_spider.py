@@ -3,11 +3,11 @@ from urllib.parse import urljoin
 import hashlib
 from ..items import Categorie, SubCategorie, Course, Instructor, CourseInstructor, Organization, CourseOrganization, InstructorOrganization
 
-
 class FuturlearnSpiderSpider(scrapy.Spider):
     name = "futurlearn_spider"
     allowed_domains = ["www.futurelearn.com"]
     start_urls = ["https://www.futurelearn.com/subjects"]
+
 
     def parse(self, response):
         # Sélectionner tous les éléments li avec la classe "list-listItem_NceHt"
@@ -29,18 +29,13 @@ class FuturlearnSpiderSpider(scrapy.Spider):
             # Générer un identifiant unique pour le sujet à partir de son URL
             subject_id = hashlib.sha256(url.encode()).hexdigest()
 
-            categorie_item = Categorie()
-            '''
-            yield {
-                'id': subject_id,
-                'categorie': title.strip() if title else None,
-                'description': description.strip() if description else None,
-                'url': url,
-            }'''
-            categorie_item['id'] = subject_id,
-            categorie_item['name'] = title,
-            categorie_item['description'] = description,
-            categorie_item['link'] = url,
+            categorie_item = Categorie(
+                id=subject_id,
+                name=title.strip() if title else None,
+                description=description.strip() if description else None,
+                link=url,
+            )
+            yield categorie_item
 
             yield scrapy.Request(
                 url,
@@ -64,22 +59,13 @@ class FuturlearnSpiderSpider(scrapy.Spider):
             # Générer un identifiant unique pour le sujet à partir de son URL
             subject_id = hashlib.sha256(url.encode()).hexdigest()
 
-            SubCategorie_item = SubCategorie()
-
-            SubCategorie_item['id'] = subject_id,
-            SubCategorie_item['name'] = title,
-            SubCategorie_item['link'] = link,
-            SubCategorie_item['categorie_id'] = response.meta['categorie_id'],
-
-            # yield SubCategorie_item
-
-
-            # yield {
-            #     'subject_id': subject_id,
-            #     'subject': title,
-            #     'link': url,
-            #     'categorie_id': response.meta['categorie_id'],
-            # }
+            SubCategorie_item = SubCategorie(
+                id=subject_id,
+                name=title,
+                link=urljoin(response.url, link),
+                categorie_id=response.meta['categorie_id'],
+            )
+            yield SubCategorie_item
 
             yield scrapy.Request(
                 url,
@@ -97,27 +83,18 @@ class FuturlearnSpiderSpider(scrapy.Spider):
                 './/div[@class="align-module_wrapper__RpD0z align-module_sBreakpointDirectionhorizontal__aCYX5"]//p/text()').getall()
             link = course.xpath('.//a[@class="link-wrapper_djqc+"]/@href').get()
             url = urljoin(response.url, link)
-            
+
             # Générer un identifiant unique pour le cours à partir de son title
             course_id = hashlib.sha256(title.encode()).hexdigest()
 
-            Course_item = Course()
-            Course_item['id'] = course_id,
-            Course_item['title'] = title,
-            Course_item['url'] = url,
-            Course_item['duration'] = durations,
-            Course_item['sub_categorie_id'] = response.meta['subject_id'],
-
-            # yield Course_item
-
-
-            # yield {
-            #     'course_id': course_id,
-            #     'course': title,
-            #     'durations': durations,
-            #     'link': url,
-            #     'subject_id': response.meta['subject_id'],
-            # }
+            Course_item = Course(
+                id=course_id,
+                title=title,
+                url=url,
+                duration=durations,
+                sub_categorie_id=response.meta['subject_id'],
+            )
+            yield Course_item
 
             yield scrapy.Request(
                 url,
@@ -130,6 +107,10 @@ class FuturlearnSpiderSpider(scrapy.Spider):
 
 
     def parse_details(self, response):
+
+        # Initialiser les dictionnaires pour stocker les correspondances
+        course_instructor_dict = {}
+        course_organization_dict = {}
 
         # Sélectionner la section contenant les formateurs de cours
         educators_section = response.xpath('//section[@id="section-educators"]')
@@ -152,35 +133,36 @@ class FuturlearnSpiderSpider(scrapy.Spider):
             formateur_id = hashlib.sha256(name.encode()).hexdigest()
 
             # Instructor item
-            instructor_item = Instructor()
-            instructor_item['id'] = formateur_id,
-            instructor_item['name'] = name,
-            instructor_item['desc'] = description,
-            instructor_item['image_url'] = image_url,
+            instructor_item = Instructor(
+                id=formateur_id,
+                name=name,
+                description=description,
+                url=None,
+                image_url=image_url,
+            )
+
             yield instructor_item
 
             # CourseInstructor item
-            courseInstructor_item = CourseInstructor()
-            courseInstructor_item['course_id'] = response.meta['course_id'],
-            courseInstructor_item['instructor_id'] = formateur_id,
+            courseInstructor_item = CourseInstructor(
+                course_id=response.meta['course_id'],
+                instructor_id=formateur_id,
+            )
+            yield courseInstructor_item
 
-            # yield {
-            #     'formateur_id': formateur_id,
-            #     'formateur name': name,
-            #     'formateur description': description,
-            #     'image_url': image_url,
-            #     'course_id': response.meta['course_id'],
-            # }
+            # Enregistrer les ids de cours et d'entités dans les dictionnaires
+            course_instructor_dict.setdefault(response.meta['course_id'], []).append(formateur_id)
+
 
         # Extraire les informations de l'organisation
         organization_elements = response.xpath('//div[contains(@class, "spotlight-wrapper_wkcs+")]')
 
         for org_elem in organization_elements:
             # Extraire le nom de l'organisation
-            organisation_name = org_elem.xpath('.//h2/text()').get().strip()
+            organisation_name = org_elem.xpath('.//h2/text()').get()
 
             # Extraire la description de l'organisation
-            organisation_description = org_elem.xpath('.//div[@data-testid="dangerously-set"]/p/text()').get().strip()
+            organisation_description = org_elem.xpath('.//div[@data-testid="dangerously-set"]/p/text()').get()
             image_url = org_elem.xpath('.//img[contains(@class, "image-module_image__hvXRh")]/@src').get()
             details_url = org_elem.xpath('.//a/@href').get()
 
@@ -188,25 +170,36 @@ class FuturlearnSpiderSpider(scrapy.Spider):
             organisation_id = hashlib.sha256(organisation_name.encode()).hexdigest()
 
             # Organization item
-            organization_item = Organization()
-            organization_item['id'] = organisation_id,
-            organization_item['name'] = organisation_name,
-            organization_item['desc'] = organisation_description,
-            organization_item['img_url'] = image_url,
-            organization_item['contact_url'] = urljoin('https://www.futurelearn.com', details_url),
+            organization_item = Organization(
+                id=organisation_id,
+                name=organisation_name,
+                description=organisation_description,
+                img_url=image_url,
+                contact_url=urljoin('https://www.futurelearn.com', details_url),
+                phone=None,
+                e_mail=None,
+            )
             yield organization_item
 
-            # CourseOrganization item
-            courseOrganization = CourseOrganization()
-            courseOrganization['course_id'] = response.meta['course_id'],
-            courseOrganization['organization_id'] = organisation_id,
+            courseOrganization = CourseOrganization(
+                course_id=response.meta['course_id'],
+                organization_id=organisation_id,
+            )
             yield courseOrganization
-            
-            # yield {
-            #     'organisation_id': organisation_id,
-            #     'organisation name': organisation_name,
-            #     'organisation description': organisation_description,
-            #     'image_url': image_url,
-            #     'details_url': urljoin('https://www.futurelearn.com', details_url),
-            #     'course_id': response.meta['course_id'],
-            # }
+
+            # Enregistrer les ids de cours et d'entités dans les dictionnaires
+            course_organization_dict.setdefault(response.meta['course_id'], []).append(organisation_id)
+
+        course_id = response.meta['course_id']
+        # Comparer les ids de cours pour trouver les correspondances
+        if course_id in course_instructor_dict and course_id in course_organization_dict:
+            formateurs = course_instructor_dict[course_id]
+            organisations = course_organization_dict[course_id]
+
+            for formateur_id, organisation_id in zip(formateurs,organisations):
+                # Correspondance trouvée, enregistrement dans la table InstructorOrganization
+                instructor_organization_item = InstructorOrganization(
+                    instructor_id=formateur_id,
+                    organization_id=organisation_id,
+                )
+                yield instructor_organization_item

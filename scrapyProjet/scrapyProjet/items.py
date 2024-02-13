@@ -32,6 +32,23 @@ class Course(scrapy.Item):
     sub_categorie_id = scrapy.Field(default="pas disponible")
 
 
+class Instructor(scrapy.Item):
+    id = scrapy.Field()
+    name = scrapy.Field()
+    url = scrapy.Field(default="pas disponible")
+    image_url = scrapy.Field(default="pas disponible")
+    description = scrapy.Field(default="pas disponible")
+
+
+class Organization(scrapy.Item):
+    id = scrapy.Field()
+    name = scrapy.Field()
+    contact_url = scrapy.Field(default="pas disponible")
+    img_url = scrapy.Field(default="pas disponible")
+    description = scrapy.Field(default="pas disponible")
+    phone = scrapy.Field(default="pas disponible")
+    e_mail = scrapy.Field(default="pas disponible")
+
 class CourseInstructor(scrapy.Item):
     course_id = scrapy.Field(default="pas disponible")
     instructor_id = scrapy.Field(default="pas disponible")
@@ -43,20 +60,3 @@ class CourseOrganization(scrapy.Item):
 class InstructorOrganization(scrapy.Item):
     instructor_id = scrapy.Field(default="pas disponible")
     organization_id = scrapy.Field(default="pas disponible")
-
-class Instructor(scrapy.Item):
-    id = scrapy.Field()
-    name = scrapy.Field()
-    url = scrapy.Field(default="pas disponible")
-    image_url = scrapy.Field(default="pas disponible")
-    desc = scrapy.Field(default="pas disponible")
-
-
-class Organization(scrapy.Item):
-    id = scrapy.Field()
-    name = scrapy.Field()
-    contact_url = scrapy.Field(default="pas disponible")
-    img_url = scrapy.Field(default="pas disponible")
-    desc = scrapy.Field(default="pas disponible")
-    phone = scrapy.Field(default="pas disponible")
-    e_mail = scrapy.Field(default="pas disponible")
