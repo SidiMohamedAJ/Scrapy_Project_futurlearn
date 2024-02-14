@@ -3,7 +3,7 @@ from itemadapter import ItemAdapter
 from .items import Categorie, SubCategorie, Course, Instructor, CourseInstructor, Organization, CourseOrganization, InstructorOrganization
 
 
-class PostgreSQLPipeline:
+class FutureLearnPipeline:
     def open_spider(self, spider):
         self.conn = psycopg2.connect(
             dbname='big_format_db',
@@ -81,8 +81,9 @@ class PostgreSQLPipeline:
     def insert_course(self, item):
         try:
             self.cur.execute(
-                "INSERT INTO Course (id, title, url, duration, sub_categorie_id) VALUES (%s, %s, %s, %s, %s)",
-                (item['id'], item['title'], item['url'], item['duration'],item['sub_categorie_id'])
+                "INSERT INTO Course (id, title, url, duration,rating,type,price,  sub_categorie_id) VALUES (%s, %s, %s, %s, %s,%s,%s,%s)",
+                (item['id'], item['title'], item['url'], item['duration'],item['rating'],
+                 item['type'], item['price'], item['sub_categorie_id'])
             )
             self.conn.commit()
         except psycopg2.Error as e:
