@@ -137,11 +137,15 @@ class FuturlearnSpiderSpider(scrapy.Spider):
                     course_item = Course(
                         id=course_id,
                         title=title,
+                        desc=None,
                         url=course['url'],
+                        img_url=None,
                         rating=rating,
+                        num_reviews=None,
                         duration=duration,
                         type=online_type,
                         price=price,
+                        level=None,
                         sub_categorie_id=course['sub_categorie_id'],
                     )
                     yield course_item
