@@ -13,7 +13,7 @@ class FutureLearnPipeline:
             port='5432',
         )
         self.cur = self.conn.cursor()
-        self.setup("C:/Users/PC/PycharmProjects/scrapyProject/scrapyProjet/scrapyProjet/files/db_setup.txt")
+        self.setup("C:/Users/acer/OneDrive/Documents/ScrapyProject/Scrapy_Project_futurlearn/scrapyProjet/scrapyProjet/files/db_setup.txt")
 
     def close_spider(self, spider):
         self.cur.close()
