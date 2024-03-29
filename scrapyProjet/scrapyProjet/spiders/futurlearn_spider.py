@@ -1,6 +1,7 @@
 import scrapy
 from urllib.parse import urljoin
 import hashlib
+import json
 from ..items import Categorie, SubCategorie, Course, Instructor, CourseInstructor, Organization, CourseOrganization, InstructorOrganization
 
 class FuturlearnSpiderSpider(scrapy.Spider):
@@ -8,6 +9,22 @@ class FuturlearnSpiderSpider(scrapy.Spider):
     allowed_domains = ["www.futurelearn.com"]
     start_urls = ["https://www.futurelearn.com/subjects"]
 
+    def __init__(self):
+        super(FuturlearnSpiderSpider, self).__init__()
+        self.data = {
+            "categories": [],
+            "subcategories": [],
+            "courses": [],
+            "instructors": [],
+            "course_instructors": [],
+            "organizations": [],
+            "course_organizations": [],
+            "instructor_organizations": [],
+        }
+
+    def closed(self, reason):
+        with open('output.json', 'w') as outfile:
+            json.dump(self.data, outfile, default=lambda x: x.__dict__)
 
     def parse(self, response):
         # Sélectionner tous les éléments li avec la classe "list-listItem_NceHt"
@@ -35,7 +52,9 @@ class FuturlearnSpiderSpider(scrapy.Spider):
                 description=description.strip() if description else None,
                 link=url,
             )
-            yield categorie_item
+
+            self.data["categories"].append(categorie_item)
+            # yield categorie_item
 
             yield scrapy.Request(
                 url,
@@ -65,7 +84,9 @@ class FuturlearnSpiderSpider(scrapy.Spider):
                 link=urljoin(response.url, link),
                 categorie_id=response.meta['categorie_id'],
             )
-            yield SubCategorie_item
+
+            self.data["subcategories"].append(SubCategorie_item)
+            # yield SubCategorie_item
 
             yield scrapy.Request(
                 url,
@@ -95,6 +116,7 @@ class FuturlearnSpiderSpider(scrapy.Spider):
                 'url': url,
                 'sub_categorie_id': response.meta['subject_id'],
             }
+
             course_list.append(Course_item)
 
             yield scrapy.Request(
@@ -148,7 +170,10 @@ class FuturlearnSpiderSpider(scrapy.Spider):
                         level=None,
                         sub_categorie_id=course['sub_categorie_id'],
                     )
-                    yield course_item
+                    self.data["courses"].append(course_item)
+                    # yield course_item
+
+
 
         # Initialiser les dictionnaires pour stocker les correspondances
         course_instructor_dict = {}
@@ -182,15 +207,16 @@ class FuturlearnSpiderSpider(scrapy.Spider):
                 url=None,
                 image_url=image_url,
             )
-
-            yield instructor_item
+            self.data["instructors"].append(instructor_item)
+            # yield instructor_item
 
             # CourseInstructor item
             courseInstructor_item = CourseInstructor(
                 course_id=response.meta['course_id'],
                 instructor_id=formateur_id,
             )
-            yield courseInstructor_item
+            self.data["course_instructors"].append(courseInstructor_item)
+            # yield courseInstructor_item
 
             # Enregistrer les ids de cours et d'entités dans les dictionnaires
             course_instructor_dict.setdefault(response.meta['course_id'], []).append(formateur_id)
@@ -221,13 +247,15 @@ class FuturlearnSpiderSpider(scrapy.Spider):
                 phone=None,
                 e_mail=None,
             )
-            yield organization_item
+            self.data["organizations"].append(organization_item)
+            # yield organization_item
 
             courseOrganization = CourseOrganization(
                 course_id=response.meta['course_id'],
                 organization_id=organisation_id,
             )
-            yield courseOrganization
+            self.data["course_organizations"].append(courseOrganization)
+            # yield courseOrganization
 
             # Enregistrer les ids de cours et d'entités dans les dictionnaires
             course_organization_dict.setdefault(response.meta['course_id'], []).append(organisation_id)
@@ -244,4 +272,5 @@ class FuturlearnSpiderSpider(scrapy.Spider):
                     instructor_id=formateur_id,
                     organization_id=organisation_id,
                 )
-                yield instructor_organization_item
+                self.data["instructor_organizations"].append(instructor_organization_item)
+                # yield instructor_organization_item
